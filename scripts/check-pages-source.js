@@ -26,7 +26,12 @@ function gh(args) {
 
 function repoSlug(argv) {
   const slug = argv.find((arg) => !arg.startsWith('--'));
-  if (slug) return slug;
+  if (slug) {
+    if (!/^[\w.-]+\/[\w.-]+$/.test(slug)) {
+      throw new Error(`Invalid repository '${slug}'. Expected 'owner/repo'.`);
+    }
+    return slug;
+  }
   return JSON.parse(gh(['repo', 'view', '--json', 'nameWithOwner']))
     .nameWithOwner;
 }
