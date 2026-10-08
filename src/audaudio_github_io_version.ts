@@ -2,4 +2,4 @@
 // Kept in sync by test/audaudio_github_io_version.spec.ts.
 
 /** The version of the `audaudio.github.io` package. */
-export const audaudioGithubIoVersion = '0.0.3';
+export const audaudioGithubIoVersion = '0.1.0';
