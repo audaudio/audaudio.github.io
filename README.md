@@ -37,8 +37,11 @@ shells.
 
 This site is being built. [The graph](https://audaudio.github.io/graph/)
 describes the engine: persistent nodes, immutable programs, transactions,
-the realtime queues, time and the lifecycle. The plan, the decisions and
-the architecture are in the project management repo
+the realtime queues, time and the lifecycle.
+[The headless host](https://audaudio.github.io/host/) runs a graph without
+Dart, as the plugin shells do, and shows how the realtime contract is
+tested. The plan, the decisions and the architecture are in the project
+management repo
 [aud_audio_pm](https://github.com/audaudio/aud_audio_pm); the packages
 live in the GitHub organization [audaudio](https://github.com/audaudio).
 
@@ -98,12 +101,15 @@ can be cancelled by id or per node. A scheduled event is delivered early
 by the path latency of its node, so that it is heard at its time; a live
 event is delivered as early as possible. A late event plays at the start
 of the block with a diagnostic, or is dropped if the graph is configured
-so. Events with the same time keep their order, except that a note-off
-precedes a note-on of the same note, so that notes retrigger.
+so. Events with the same time keep their order, except that the
+note-off of a sounding note precedes a note-on of the same note, so that
+notes retrigger; a note-on and its own note-off at the same time stay in
+order, so that a short note never hangs.
 
 The engine tracks the notes it delivered and closes them with note-offs
 when a node retires, when the transport stops or seeks for nodes that
-reset on it, and when the graph stops. Meters and taps publish into lossy
+reset on it, and with the first block after the graph stops or is
+prepared anew. Meters and taps publish into lossy
 buffers the control thread reads whenever it likes. The audio thread never
 calls into Dart: a notification thread wakes the control thread, which
 takes the notifications - adopted revisions, finished nodes, diagnostics,
@@ -157,13 +163,97 @@ the package; the node presets follow the schema of `aud_audio_core`.
 Tests, the example app and the benchmarks use these nodes until the DSP
 packages exist.
 
+## The headless host
+
+The headless host runs a graph without Dart. The plugin shells for VST3,
+CLAP and AUv3 are its first users: a plugin host loads them into its own
+process, hands them audio buffers and expects a state it can save and
+restore. The host lives in `aud_audio_graph` next to the engine as the C
+API `aud_host_*`; Dart reaches it through `AudHost`.
+
+### Loading a document
+
+A host loads a graph document - the JSON of
+[the graph](https://audaudio.github.io/graph/) - into a graph. It checks
+all of the document first: the schema, the node types,
+the ids, the buses against the graph's, the parameters and string keys of
+every preset, the state versions, the asset files on disk and the
+parameter ids. Only then does it create the nodes, apply their presets and
+connect them, in one transaction. A document that does not fit changes
+nothing, and the host says which part failed. A document loaded over
+another one replaces it without a click: the old nodes fade out while the
+new ones fade in.
+
+### Presets and state
+
+A node preset sets string settings, a state blob and parameters, applied
+in this order: the strings load what the node needs - a sample, an
+instrument -, the state blob restores what parameters cannot hold, and the
+parameters come last. The host keeps the value of every parameter, since
+the engine has none to report, so a node keeps parameter values out of its
+state blob. The engine calls the state functions of a node only while no
+block renders it: on a running graph the node is parked for the
+microseconds of the call, and a block rendered meanwhile leaves it silent.
+
+Saving writes the document back with the current parameters, strings and
+state blobs. Loading that document restores the plugin: the state a
+plugin host keeps is this document.
+
+### Assets
+
+A document lists the files its nodes load, each with an id and a path. A
+string setting names a file as `asset:<id>`; the host resolves the path
+against its base directory - the preset folder of a plugin, say - and
+hands the node the full path. When a file has moved, the host relinks the
+asset and applies every string that names it again. The page shows
+the reference chain with a saved gain and a sampler whose instrument is
+an asset; the sampler node `aud.sampler.sfz` comes with
+`aud_dsp_sampler`, the other nodes are the reference nodes of the graph.
+
+### Parameter ids
+
+Plugin hosts address parameters by a number that must not change between
+versions of a plugin. The host derives it from the node id and the
+parameter id: FNV-1a over `<node id>/<parameter id>`, with the top bit
+cleared as VST3 hosts expect. Renaming a node changes its ids; adding,
+removing or reordering nodes and parameters changes none of the others. A
+document whose ids collide is refused.
+
+### Latency, tail and events
+
+The host reports the latency of the graph and its tail: the longest tail
+of a node plus the latency between that node and the outputs, or an
+endless tail when a node never ends. A plugin host renders the graph
+through a render call that also returns the events the graph sends to its
+event input - the notes of an arpeggiator, for example - in the order of
+their sample offsets. A freewheeling host - a bounce, an export - marks
+its blocks offline, so the nodes know and no overload is reported.
+
+### Testing the realtime contract
+
+The native tests drive the engine the way streams and plugin hosts do,
+under load: queues that overflow and refuse, late events, a transaction
+in front of every block with a click detector on the output, route
+changes to a new sample rate and block size while notes play, a full
+scheduler and a full note tracker, and a stream that renders on its own
+thread while the control thread calls everything it may call. They run
+three times: under the address and the undefined behaviour sanitizers,
+under Clang's RealtimeSanitizer - with a probe that proves it catches an
+allocation on the audio thread - and under the thread sanitizer.
+
+A debug watchdog counts every allocation, free and log call on the audio
+thread and fails the tests on any. An app turns it on with the user
+define `watchdog: true` of `aud_audio_graph`; a release build carries none
+of it.
+
 ## Pages
 
-| Page                                             | Source                         |
-| ------------------------------------------------ | ------------------------------ |
-| [Start](https://audaudio.github.io/)             | `src/content/docs/index.mdx`   |
-| [Overview](https://audaudio.github.io/overview/) | `src/content/docs/overview.md` |
-| [The graph](https://audaudio.github.io/graph/)   | `src/content/docs/graph.mdx`   |
+| Page                                                  | Source                         |
+| ----------------------------------------------------- | ------------------------------ |
+| [Start](https://audaudio.github.io/)                  | `src/content/docs/index.mdx`   |
+| [Overview](https://audaudio.github.io/overview/)      | `src/content/docs/overview.md` |
+| [The graph](https://audaudio.github.io/graph/)        | `src/content/docs/graph.mdx`   |
+| [The headless host](https://audaudio.github.io/host/) | `src/content/docs/host.mdx`    |
 
 ## Run the site
 

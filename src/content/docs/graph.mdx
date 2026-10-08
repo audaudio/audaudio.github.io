@@ -59,12 +59,15 @@ can be cancelled by id or per node. A scheduled event is delivered early
 by the path latency of its node, so that it is heard at its time; a live
 event is delivered as early as possible. A late event plays at the start
 of the block with a diagnostic, or is dropped if the graph is configured
-so. Events with the same time keep their order, except that a note-off
-precedes a note-on of the same note, so that notes retrigger.
+so. Events with the same time keep their order, except that the
+note-off of a sounding note precedes a note-on of the same note, so that
+notes retrigger; a note-on and its own note-off at the same time stay in
+order, so that a short note never hangs.
 
 The engine tracks the notes it delivered and closes them with note-offs
 when a node retires, when the transport stops or seeks for nodes that
-reset on it, and when the graph stops. Meters and taps publish into lossy
+reset on it, and with the first block after the graph stops or is
+prepared anew. Meters and taps publish into lossy
 buffers the control thread reads whenever it likes. The audio thread never
 calls into Dart: a notification thread wakes the control thread, which
 takes the notifications - adopted revisions, finished nodes, diagnostics,
