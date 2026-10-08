@@ -69,6 +69,10 @@ export default defineConfig({
           label: 'Start here',
           items: [{ label: 'Overview', slug: 'overview' }],
         },
+        {
+          label: 'The engine',
+          items: [{ label: 'The graph', slug: 'graph' }],
+        },
       ],
     }),
   ],
