@@ -23,6 +23,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
+      # The site is published from this workflow's artifact. If the Pages
+      # source falls back to the branch build, Jekyll publishes the README
+      # instead of the site (ticket 18); the script restores the source.
+      - name: Keep the Pages source on GitHub Actions
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/check-pages-source.js --fix ${{ github.repository }}
+
       - name: Build and upload Astro site
         uses: withastro/action@v6
         with:
