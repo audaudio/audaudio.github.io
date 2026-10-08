@@ -1,0 +1,29 @@
+# Ignore artifacts
+build
+coverage
+node_modules
+dist
+typescript/generated
+.gg
+.astro
+CHANGELOG.md
+
+# Dart files
+**/*.dart
+pubspec.yaml
+test/goldens/**
+
+# Files the DNA generates. They must match the generated originals
+# byte for byte — a formatter rewriting them would make every test run
+# back them up and overwrite them on every run.
+dna/
+doc/
+.vscode/
+.claude/
+scripts/
+
+# Lockfiles
+pnpm-lock.yaml
+pubspec.lock
+
+tsconfig.json

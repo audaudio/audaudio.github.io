@@ -1,0 +1,14 @@
+---
+title: Overview
+description: What the Audanika Audio Engine is and where its documentation will grow.
+---
+
+The Audanika Audio Engine (`aud_audio`) is a family of Dart packages for
+Flutter apps: a signal-flow graph defined in Dart and rendered in C++,
+audio IO per platform, DSP nodes, a sequencer, UI widgets and plugin
+shells.
+
+This site is being built. The plan, the decisions and the architecture
+are in the project management repo
+[aud_audio_pm](https://github.com/audaudio/aud_audio_pm); the packages
+live in the GitHub organization [audaudio](https://github.com/audaudio).

@@ -1,0 +1,17 @@
+// @license
+// Copyright (c) Audanika. All Rights Reserved.
+//
+// Use of this source code is governed by terms that can be
+// found in the LICENSE file in the root of this package.
+
+{
+  "name": "audaudio.github.io",
+  "summary": "Documentation site of the Audanika Audio Engine, built with Astro and Starlight.",
+  "domain": [
+    "Documentation site of the Audanika Audio Engine, built with Astro and Starlight",
+  ],
+  "interfaces": {
+    "uses": {},
+    "usedBy": {},
+  },
+}

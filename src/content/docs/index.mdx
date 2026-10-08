@@ -1,0 +1,46 @@
+---
+title: Audanika Audio Engine
+description: A Flutter audio engine. Signal-flow graphs defined in Dart, rendered in C++ on iOS, Android, macOS, Windows, Linux and Web.
+template: splash
+hero:
+  tagline: A Flutter audio engine. Signal-flow graphs defined in Dart, rendered in C++ on iOS, Android, macOS, Windows, Linux and Web.
+  actions:
+    - text: Overview
+      link: /overview/
+      icon: right-arrow
+    - text: View on GitHub
+      link: https://github.com/audaudio
+      icon: external
+      variant: minimal
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+
+## What it is
+
+<CardGrid stagger>
+  <Card
+    title="Dart defines, C++ renders"
+    icon="setting">
+    The graph, its parameters and events are Dart objects; every edit compiles
+    into a render program that the C++ engine adopts at the next block boundary.
+  </Card>
+  <Card
+    title="Six platforms"
+    icon="laptop">
+    iOS and Android first, then macOS, Windows, Linux and the Web through
+    WebAssembly in an AudioWorklet.
+  </Card>
+  <Card
+    title="A family of packages"
+    icon="puzzle">
+    Engine, audio IO, DSP nodes, sequencer, UI widgets and plugin shells, one
+    repo each, all MIT.
+  </Card>
+  <Card
+    title="Planned in the open"
+    icon="document">
+    Decisions, architecture and the ticket plan live in the project management
+    repo aud_audio_pm.
+  </Card>
+</CardGrid>
