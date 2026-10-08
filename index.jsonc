@@ -9,6 +9,7 @@
   "summary": "Documentation site of the Audanika Audio Engine, built with Astro and Starlight.",
   "domain": [
     "Documentation site of the Audanika Audio Engine, built with Astro and Starlight",
+    "Pages: the start page, the overview and The graph (the engine of aud_audio_graph, with the reference chain as a tested graph document)",
   ],
   "interfaces": {
     "uses": {},
