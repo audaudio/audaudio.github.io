@@ -71,7 +71,10 @@ export default defineConfig({
         },
         {
           label: 'The engine',
-          items: [{ label: 'The graph', slug: 'graph' }],
+          items: [
+            { label: 'The graph', slug: 'graph' },
+            { label: 'The headless host', slug: 'host' },
+          ],
         },
       ],
     }),
