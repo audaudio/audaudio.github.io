@@ -41,7 +41,10 @@ the realtime queues, time and the lifecycle.
 [The headless host](https://audaudio.github.io/host/) runs a graph without
 Dart, as the plugin shells do, and shows how the realtime contract is
 tested. [Audio IO](https://audaudio.github.io/io/) plays and records on iOS
-and Android and recovers from route changes and interruptions. The plan,
+and Android and recovers from route changes and interruptions.
+[The engine](https://audaudio.github.io/engine/) joins graph and IO in
+`AudEngine`: getting started, the lifecycle, DSP packages and the
+numbers. The plan,
 the decisions and the architecture are in the project management repo
 [aud_audio_pm](https://github.com/audaudio/aud_audio_pm); the packages
 live in the GitHub organization [audaudio](https://github.com/audaudio).
@@ -366,6 +369,117 @@ frames later, the latency the stream reported.
 The numbers of the reference devices - an iPhone 15 or newer and a Pixel 8
 or newer - go into the plan of ticket 21 as they are measured.
 
+## The engine
+
+`aud_audio` is the package an app depends on. Its `AudEngine` joins
+[the graph](https://audaudio.github.io/graph/) to [the audio IO](https://audaudio.github.io/io/): it opens a session and an
+output stream, creates the graph and hands the graph's render function to
+the stream. iOS and Android come first; macOS, Windows and Linux run a null
+device until their IO lands, the web follows with its own build.
+
+### Getting started
+
+An oscillator into a filter into the output:
+
+```dart
+import 'package:aud_audio/aud_audio.dart';
+
+void main() {
+  final engine = AudEngine();
+  final graph = engine.graph;
+  final osc = graph.createNode('aud.graph.oscillator');
+  final filter = graph.createNode('aud.graph.filter');
+  graph.transaction(
+    (tx) => tx
+      ..connect(osc, filter)
+      ..connect(filter, graph.io),
+  );
+  graph.setParam(filter, 'cutoff', 1200);
+  engine.start();
+}
+```
+
+`aud_audio.dart` is one API on every platform: it imports no `dart:ffi`,
+so the same code compiles for the web, where the engine is still a stub.
+`aud_audio_ffi.dart` adds what only native platforms have - the engine's
+stream and graph pointers, the register functions of DSP packages and the
+native parts of the family.
+
+### States
+
+An engine is created, prepared, running, suspended, stopped or disposed,
+and it tells every change on `engine.states`. `prepare` registers the DSP
+packages and prepares the graph for the rate and block size of the stream;
+`start` prepares if needed and starts graph and stream; `stop` and
+`dispose` undo start-up in reverse.
+
+### When the device changes
+
+A new sample rate, another route, a phone call, a lost headset: the
+engine runs one sequence for all of them. The stream holds the graph and
+plays silence while the format is new; the engine suspends the graph,
+prepares it for the new rate and block size, resumes it and acknowledges
+the format to the stream. An interruption or a lost device suspends the
+graph until the stream reports it over. The transport keeps its position,
+the graph and its nodes stay as they are. The glue runs in Dart on the
+control thread; the audio thread never renders a graph that is being
+prepared.
+
+### DSP packages
+
+A DSP package ships its nodes in C++ and exports
+`aud_<package>_register(const AudHostApi*)`. The engine calls it at its
+start; a package built against another major version of the ABI is
+refused, and `engine.registrations` says why:
+
+```dart
+import 'package:aud_audio/aud_audio_ffi.dart';
+
+final engine = AudEngine(
+  packages: [
+    AudNativeNodePackage(
+      'aud_dsp_effects',
+      Native.addressOf(aud_dsp_effects_register),
+    ),
+  ],
+);
+engine.prepare();
+print(engine.registrations); // AUD_OK, or AUD_ERROR_ABI_MAJOR
+```
+
+### The numbers
+
+The engine measures what the benchmarks will build on: the time the graph
+takes per block, the xruns and late callbacks of the device, and command
+to sound - from the host time of a command to the time the first block
+that carries it reaches the output. `engine.measureCommandToSound()` takes
+one measurement, `engine.numbers` collects them, and `engine.report()`
+writes a text to copy. The example app shows them; on an iPad Pro (M5) over ten minutes they
+read:
+
+```json
+{
+  "sampleRate": 48000.0,
+  "bufferFrames": 256,
+  "blocksRendered": 112762,
+  "renderTimeMaxNs": 2252292,
+  "renderTimeMeanNs": 10364,
+  "callbacks": 112762,
+  "callbackTimeMaxNs": 2261208,
+  "callbackTimeMeanNs": 11056,
+  "xruns": 0,
+  "lateCallbacks": 2,
+  "outputLatencyFrames": 784,
+  "commandToSoundMinNs": 17122082,
+  "commandToSoundMeanNs": 20439105,
+  "commandToSoundMaxNs": 21554832
+}
+```
+
+The numbers of real devices - an iPhone 15 or newer and a Pixel 8 or
+newer - are in the plan of ticket 22 in
+[aud_audio_pm](https://github.com/audaudio/aud_audio_pm).
+
 ## Pages
 
 | Page                                                  | Source                         |
@@ -375,6 +489,7 @@ or newer - go into the plan of ticket 21 as they are measured.
 | [The graph](https://audaudio.github.io/graph/)        | `src/content/docs/graph.mdx`   |
 | [The headless host](https://audaudio.github.io/host/) | `src/content/docs/host.mdx`    |
 | [Audio IO](https://audaudio.github.io/io/)            | `src/content/docs/io.mdx`      |
+| [The engine](https://audaudio.github.io/engine/)      | `src/content/docs/engine.mdx`  |
 
 ## Run the site
 

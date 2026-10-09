@@ -13,7 +13,9 @@ persistent nodes, immutable programs, transactions, the realtime queues,
 time and the lifecycle. [The headless host](/host/) runs a graph without
 Dart, as the plugin shells do, and shows how the realtime contract is
 tested. [Audio IO](/io/) plays and records on iOS and Android and recovers
-from route changes and interruptions. The plan, the decisions and the
+from route changes and interruptions. [The engine](/engine/) joins graph and IO
+in `AudEngine`: getting started, the lifecycle, DSP packages and the
+numbers. The plan, the decisions and the
 architecture are in the project management repo
 [aud_audio_pm](https://github.com/audaudio/aud_audio_pm); the packages
 live in the GitHub organization [audaudio](https://github.com/audaudio).
