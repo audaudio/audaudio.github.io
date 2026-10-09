@@ -9,6 +9,10 @@
 - Add the page The headless host: graph documents with presets, state
   and assets, parameter ids, latency, tail and events without Dart, and
   how the realtime contract is tested (ticket 20)
+- Add the page Audio IO: sessions, devices and streams on iOS and
+  Android, the time of every block, recovery from route changes and
+  interruptions, permission and focus, and how a device is measured, with
+  the latency probe's report as a tested snippet (ticket 21)
 
 ### Fixed
 
