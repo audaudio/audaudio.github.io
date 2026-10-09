@@ -12,7 +12,8 @@ This site is being built. [The graph](/graph/) describes the engine:
 persistent nodes, immutable programs, transactions, the realtime queues,
 time and the lifecycle. [The headless host](/host/) runs a graph without
 Dart, as the plugin shells do, and shows how the realtime contract is
-tested. The plan, the decisions and the architecture are
-in the project management repo
+tested. [Audio IO](/io/) plays and records on iOS and Android and recovers
+from route changes and interruptions. The plan, the decisions and the
+architecture are in the project management repo
 [aud_audio_pm](https://github.com/audaudio/aud_audio_pm); the packages
 live in the GitHub organization [audaudio](https://github.com/audaudio).

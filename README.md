@@ -40,8 +40,9 @@ describes the engine: persistent nodes, immutable programs, transactions,
 the realtime queues, time and the lifecycle.
 [The headless host](https://audaudio.github.io/host/) runs a graph without
 Dart, as the plugin shells do, and shows how the realtime contract is
-tested. The plan, the decisions and the architecture are in the project
-management repo
+tested. [Audio IO](https://audaudio.github.io/io/) plays and records on iOS
+and Android and recovers from route changes and interruptions. The plan,
+the decisions and the architecture are in the project management repo
 [aud_audio_pm](https://github.com/audaudio/aud_audio_pm); the packages
 live in the GitHub organization [audaudio](https://github.com/audaudio).
 
@@ -246,6 +247,125 @@ thread and fails the tests on any. An app turns it on with the user
 define `watchdog: true` of `aud_audio_graph`; a release build carries none
 of it.
 
+## Audio IO
+
+`aud_audio_io` connects the engine to the audio devices of the platform. On
+Android it plays and records through Oboe, on iOS through miniaudio on an
+AVAudioSession of its own; macOS, Windows and Linux get their backends
+later and run a null device until then. The C API is `aud_io_*`; Dart
+reaches it through `AudIoSession` and `AudIoStream`.
+
+### Sessions and devices
+
+An app opens one session. It owns the backend and lists the devices: their
+id, name, direction and route - speaker, headset, USB, Bluetooth and
+others -, their channel counts and sample rates, and whether they are the
+default. On iOS the list holds the outputs of the current route and the
+available inputs; iOS chooses the output itself. On Android the list comes
+from `AudioManager`, which the package reaches through JNI. When devices
+come or go, the session says so: iOS reports its route changes, Android is
+read every second and whenever a stream loses its device.
+
+### Streams
+
+A stream plays, records or does both. It asks for devices, channels, a
+sample rate - or the device's, followed across route changes -, a buffer
+size and the largest block its render function takes. The render function
+is native: the stream calls it on the audio thread with planar buses and
+the time of the block, the render interface the graph and the plugin
+shells share. A client hands the stream the graph's render function and
+the graph as its user. The stream splits device callbacks larger than the
+largest block, so the render function never sees more frames than it was
+prepared for, however the hardware calls back. Nothing on the audio thread
+allocates, locks, logs or calls into Dart.
+
+### The time of a block
+
+Every block carries its sample position, the host time at which its first
+frame reaches the output - for a stream that only records, the time it was
+captured -, where that time comes from, how accurate it is, and the latency
+of each direction. On Android the times come from AAudio's timestamps; on
+iOS they are estimates: the time of the callback plus its block and the
+latency the audio session reports. The accuracy is the mean deviation of
+the host times from the sample clock. After a stream was stopped or its
+device was away, the sample position runs on by the frames it missed: the
+time filters of the engine see the jump and start over.
+
+### When the device changes
+
+Devices go away, routes change, a call takes the audio. A stream deals
+with each case on its own and reports it:
+
+- **A lost device** - a headset unplugged, an AAudio stream closed by a
+  route change - is opened again by a worker thread of the stream, with
+  short waits between the attempts; a requested device that is gone gives
+  way to the default one. After five seconds without success the stream
+  reports that it failed; starting it again tries anew.
+- **A new sample rate or channel count** makes the stream hold its render
+  function: it plays silence and keeps time until the client has prepared
+  its renderer for the new format - for the graph: suspend, prepare,
+  resume - and acknowledged it. The transport of the graph keeps its
+  position. A render function that follows the format on its own, like
+  those of the package, is not held.
+- **An interruption** - a phone call, Siri, an app that takes the audio
+  focus on Android, iOS suspending the app - stops the stream; when the
+  system gives the audio back, it starts again. On iOS the return of the
+  app to the foreground ends an interruption too.
+- **The reset of the media services** on iOS opens every stream anew.
+
+From the loss of a device to the first callback after it is back the
+budget is 500 ms; on the null device the stream itself takes about 2 ms of
+it.
+
+### Permission and focus
+
+Recording needs the microphone permission. The session reads it and asks
+for it - iOS through the audio session, Android through the app's
+activity. An app declares the microphone in its `Info.plist` and its
+`AndroidManifest.xml`. On Android the session holds the audio focus while
+a stream plays: when another app takes it, the streams are interrupted,
+and they resume when it comes back.
+
+### Counters
+
+A stream counts its callbacks and their sizes, the time between them and
+inside them, late callbacks, xruns, disconnects, recoveries and their
+duration, interruptions, held blocks and the errors of the render
+function, and it keeps the time of the last block. Notifications reach
+Dart through a notification thread that the audio thread wakes.
+
+### Building
+
+The Android build hook compiles Oboe from source and links the library
+with 16 KB pages, which Android 15 devices need; a script proves the
+alignment with `llvm-readelf`. Only the functions of the C API are visible.
+On iOS miniaudio compiles into an Objective-C++ unit. Both libraries are
+vendored and listed in the notices of the package. The package needs the
+Flutter SDK, because its Android part calls Java through `package:jni`.
+
+### Testing and measuring
+
+The null device keeps time without hardware and takes the faults of real
+devices on request: disconnects, new rates and channel counts,
+interruptions, late callbacks, xruns, hot-plugs, failing opens and a
+refused permission. The native tests run on it three times: under the
+address and undefined behaviour sanitizers, under Clang's
+RealtimeSanitizer - with the stream callbacks marked nonblocking and a
+probe that proves an allocation in the render function is caught - and
+under the thread sanitizer. The Dart tests run the null device into a real
+graph across a change of the sample rate.
+
+The example app runs on simulators, emulators and devices. Its latency
+probe plays a click every half second and finds it again at the input
+through a loop - a cable or the air -, and its report compares the
+measured round trip with the latency the stream reported. The page shows
+the report of a duplex stream on the null device, whose loop returns the
+output after exactly the reported latency: every click is found 512
+frames later, the latency the stream reported.
+
+The numbers of the reference devices - an iPhone 15 or newer and a Pixel 8
+or newer - go into the plan of ticket 21 as they are measured.
+
 ## Pages
 
 | Page                                                  | Source                         |
@@ -254,6 +374,7 @@ of it.
 | [Overview](https://audaudio.github.io/overview/)      | `src/content/docs/overview.md` |
 | [The graph](https://audaudio.github.io/graph/)        | `src/content/docs/graph.mdx`   |
 | [The headless host](https://audaudio.github.io/host/) | `src/content/docs/host.mdx`    |
+| [Audio IO](https://audaudio.github.io/io/)            | `src/content/docs/io.mdx`      |
 
 ## Run the site
 
