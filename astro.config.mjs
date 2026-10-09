@@ -75,6 +75,7 @@ export default defineConfig({
             { label: 'The graph', slug: 'graph' },
             { label: 'The headless host', slug: 'host' },
             { label: 'Audio IO', slug: 'io' },
+            { label: 'The engine', slug: 'engine' },
           ],
         },
       ],

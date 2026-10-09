@@ -1,0 +1,81 @@
+---
+title: The engine
+description: Getting started with aud_audio - AudEngine plays a graph through an output stream, keeps the lifecycle, registers DSP packages and measures render time, xruns and command-to-sound latency.
+---
+
+import Snippet from '../../components/Snippet.astro';
+
+`aud_audio` is the package an app depends on. Its `AudEngine` joins
+[the graph](/graph/) to [the audio IO](/io/): it opens a session and an
+output stream, creates the graph and hands the graph's render function to
+the stream. iOS and Android come first; macOS, Windows and Linux run a null
+device until their IO lands, the web follows with its own build.
+
+## Getting started
+
+An oscillator into a filter into the output:
+
+<Snippet
+  file="engine.spec.ts"
+  region="start"
+  lang="dart"
+/>
+
+`aud_audio.dart` is one API on every platform: it imports no `dart:ffi`,
+so the same code compiles for the web, where the engine is still a stub.
+`aud_audio_ffi.dart` adds what only native platforms have - the engine's
+stream and graph pointers, the register functions of DSP packages and the
+native parts of the family.
+
+## States
+
+An engine is created, prepared, running, suspended, stopped or disposed,
+and it tells every change on `engine.states`. `prepare` registers the DSP
+packages and prepares the graph for the rate and block size of the stream;
+`start` prepares if needed and starts graph and stream; `stop` and
+`dispose` undo start-up in reverse.
+
+## When the device changes
+
+A new sample rate, another route, a phone call, a lost headset: the
+engine runs one sequence for all of them. The stream holds the graph and
+plays silence while the format is new; the engine suspends the graph,
+prepares it for the new rate and block size, resumes it and acknowledges
+the format to the stream. An interruption or a lost device suspends the
+graph until the stream reports it over. The transport keeps its position,
+the graph and its nodes stay as they are. The glue runs in Dart on the
+control thread; the audio thread never renders a graph that is being
+prepared.
+
+## DSP packages
+
+A DSP package ships its nodes in C++ and exports
+`aud_<package>_register(const AudHostApi*)`. The engine calls it at its
+start; a package built against another major version of the ABI is
+refused, and `engine.registrations` says why:
+
+<Snippet
+  file="engine.spec.ts"
+  region="packages"
+  lang="dart"
+/>
+
+## The numbers
+
+The engine measures what the benchmarks will build on: the time the graph
+takes per block, the xruns and late callbacks of the device, and command
+to sound - from the host time of a command to the time the first block
+that carries it reaches the output. `engine.measureCommandToSound()` takes
+one measurement, `engine.numbers` collects them, and `engine.report()`
+writes a text to copy. The example app shows them; on an iPad Pro (M5) over ten minutes they
+read:
+
+<Snippet
+  file="engine.spec.ts"
+  region="numbers"
+  lang="json"
+/>
+
+The numbers of real devices - an iPhone 15 or newer and a Pixel 8 or
+newer - are in the plan of ticket 22 in
+[aud_audio_pm](https://github.com/audaudio/aud_audio_pm).
