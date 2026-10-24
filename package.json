@@ -14,23 +14,23 @@
     "format:check": "prettier --check ."
   },
   "dependencies": {
-    "@astrojs/starlight": "^0.42.5",
-    "astro": "^7.3.8",
+    "@astrojs/starlight": "^0.42.7",
+    "astro": "^7.4.2",
     "sharp": "^0.35.5"
   },
   "devDependencies": {
-    "@astrojs/check": "^0.9.10",
-    "@ggdna/dna-scripts": "^0.2.3",
-    "@ggdna/dna-vscode": "^0.2.4",
+    "@astrojs/check": "^0.9.12",
+    "@ggdna/dna-scripts": "^0.3.0",
+    "@ggdna/dna-vscode": "^0.4.0",
     "@tssuite/golden": "^1.0.1",
-    "@tssuite/helix-js": "^0.3.0",
-    "@types/node": "^26.6.4",
-    "@vitest/coverage-v8": "5.0.3",
-    "prettier": "^3.9.9",
-    "prettier-plugin-astro": "^1.1.0",
-    "typescript": "~6.0.3",
-    "vite": "^8.3.4",
-    "vitest": "^5.0.3"
+    "@tssuite/helix-js": "^0.5.1",
+    "@types/node": "^26.6.5",
+    "@vitest/coverage-v8": "5.0.5",
+    "prettier": "^3.9.10",
+    "prettier-plugin-astro": "^1.1.1",
+    "typescript": "6",
+    "vite": "^8.3.5",
+    "vitest": "^5.0.5"
   },
   "private": true,
   "packageManager": "pnpm@12.14.0+sha512.c18ba6d87993d3d164cb5e8948f32b2c06ee854487e06cd8d86781342fb3e5bb4634367034711e86802baa9c37bea906ce1929ad08d70884c97d801df13389a6"
