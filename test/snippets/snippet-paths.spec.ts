@@ -4,7 +4,7 @@
 // Use of this source code is governed by terms that can be
 // found in the LICENSE file in the root of this package.
 
-import { relative } from 'node:path';
+import { relative, sep } from 'node:path';
 import { goldenDir } from '@tssuite/golden';
 import { describe, expect, it } from 'vitest';
 
@@ -36,8 +36,9 @@ describe('snippetPaths(page, file)', () => {
     const spec = `${root}/test/content/docs/guides/x.spec.ts`;
     const goldens = await goldenDir(`Error\n    at ${spec}:1:1`, root);
 
+    // snippetPaths names paths with /, relative with \ on Windows.
     expect(snippetPaths('src/content/docs/guides/x.mdx', 'a.json')[1]).toBe(
-      `${relative(root, goldens)}/a.json`,
+      `${relative(root, goldens).split(sep).join('/')}/a.json`,
     );
   });
 });
