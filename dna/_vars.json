@@ -1,0 +1,13 @@
+{
+  // The audaudio identity, otherwise the instances would carry ggdna's
+  // name into this repo.
+  "dnaCompany": "Audanika",
+  "dnaCopyrightHolder": "Audanika. All Rights Reserved.",
+
+  // The name of the GitHub Actions job that gates a pull request. It must
+  // match the job's "name:" in .github/workflows/quick_check.yaml exactly —
+  // that string is the status-check context GitHub reports, and
+  // scripts/setup-github-repo.js makes it the required check of the
+  // "Default" ruleset.
+  "dnaGitQuickCheckPipelineName": "Quick Check"
+}
